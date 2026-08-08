@@ -21,6 +21,7 @@ data class Bill(
     val sourceUrl: String?,
     val dataStatus: String?,
     val lastVerified: String?,
+    val imageUrl: String?,
 )
 
 data class NewsArticle(
