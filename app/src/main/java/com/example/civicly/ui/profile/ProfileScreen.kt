@@ -93,7 +93,7 @@ private const val USER_LOCATION = "Alameda County Resident"
 fun ProfileScreen(
     onOpenFeed: () -> Unit = {},
     onOpenSearch: () -> Unit = {},
-    onOpenArticle: () -> Unit = {},
+    onOpenArticle: (String?) -> Unit = {},
 ) {
     var showEdit by remember { mutableStateOf(false) }
     Box(
@@ -117,7 +117,7 @@ fun ProfileScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
             onOpenFeed = onOpenFeed,
             onOpenSearch = onOpenSearch,
-            onOpenArticle = onOpenArticle,
+            onOpenArticle = { onOpenArticle(null) },
         )
     }
     if (showEdit) EditProfileDialog(onDismiss = { showEdit = false })

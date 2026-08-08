@@ -41,8 +41,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewModelScope
 import com.example.civicly.data.Bill
 import com.example.civicly.data.NewsArticle
@@ -69,7 +69,7 @@ data class ArticleContent(
     val url: String?,
 )
 
-class ArticleViewModel : ViewModel() {
+class ArticleViewModel(private val itemId: String? = null) : ViewModel() {
     private val _state = MutableStateFlow<UiState<ArticleContent>>(UiState.Loading)
     val state: StateFlow<UiState<ArticleContent>> = _state.asStateFlow()
 
@@ -79,11 +79,17 @@ class ArticleViewModel : ViewModel() {
         _state.value = UiState.Loading
         viewModelScope.launch {
             _state.value = try {
-                val bill = SupabaseClient.api.getBills(limit = 1).firstOrNull()
+                val idFilter = itemId?.let { "eq.$it" }
+                // Try bills first (most content lives there), then articles, for the given id.
+                // With no id (nav-bar shortcut, not a specific tap), fall back to "whatever's first".
+                val bill = SupabaseClient.api.getBills(id = idFilter, limit = 1).firstOrNull()
                 UiState.Data(
                     bill?.toArticleContent()
-                        ?: SupabaseClient.api.getNewsArticles(limit = 1).firstOrNull()?.toArticleContent()
-                    ?: throw IllegalStateException("No articles or bills found in Supabase.")
+                        ?: SupabaseClient.api.getNewsArticles(id = idFilter, limit = 1).firstOrNull()?.toArticleContent()
+                    ?: throw IllegalStateException(
+                        if (itemId != null) "No bill or article found for id \"$itemId\"."
+                        else "No articles or bills found in Supabase."
+                    )
                 )
             } catch (e: Exception) {
                 UiState.Error(e.toUserMessage("Failed to load article"))
@@ -94,12 +100,15 @@ class ArticleViewModel : ViewModel() {
 
 @Composable
 fun ArticleScreen(
+    itemId: String? = null,
     onBack: () -> Unit = {},
     onOpenFeed: () -> Unit = {},
     onOpenSearch: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
-    vm: ArticleViewModel = viewModel(),
 ) {
+    // Keyed on itemId so tapping a different article/bill creates a fresh VM
+    // that fetches that specific item, instead of reusing a stale loaded one.
+    val vm = remember(itemId) { ArticleViewModel(itemId) }
     val state by vm.state.collectAsState()
     val article = when (val current = state) {
         is UiState.Data -> current.value

@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CiviclyTheme {
                 var route by remember { mutableStateOf(Route.Splash) }
+                var selectedArticleId by remember { mutableStateOf<String?>(null) }
                 when (route) {
                     Route.Splash -> SplashScreen(onGetStarted = { route = Route.Personalize })
                     Route.Personalize -> PersonalizationScreen(
@@ -33,15 +34,16 @@ class MainActivity : ComponentActivity() {
                     )
                     Route.Feed -> FeedScreen(
                         onOpenSearch = { route = Route.Search },
-                        onOpenArticle = { route = Route.Article },
+                        onOpenArticle = { id -> selectedArticleId = id; route = Route.Article },
                         onOpenProfile = { route = Route.Profile },
                     )
                     Route.Search -> SearchScreen(
                         onOpenFeed = { route = Route.Feed },
-                        onOpenArticle = { route = Route.Article },
+                        onOpenArticle = { id -> selectedArticleId = id; route = Route.Article },
                         onOpenProfile = { route = Route.Profile },
                     )
                     Route.Article -> ArticleScreen(
+                        itemId = selectedArticleId,
                         onBack = { route = Route.Feed },
                         onOpenFeed = { route = Route.Feed },
                         onOpenSearch = { route = Route.Search },
@@ -50,7 +52,7 @@ class MainActivity : ComponentActivity() {
                     Route.Profile -> ProfileScreen(
                         onOpenFeed = { route = Route.Feed },
                         onOpenSearch = { route = Route.Search },
-                        onOpenArticle = { route = Route.Article },
+                        onOpenArticle = { id -> selectedArticleId = id; route = Route.Article },
                     )
                 }
             }

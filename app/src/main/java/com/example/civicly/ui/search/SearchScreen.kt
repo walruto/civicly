@@ -68,7 +68,7 @@ private data class Category(val label: String, val icon: ImageVector, val tint: 
 @Composable
 fun SearchScreen(
     onOpenFeed: () -> Unit = {},
-    onOpenArticle: () -> Unit = {},
+    onOpenArticle: (String?) -> Unit = {},
     onOpenProfile: () -> Unit = {},
 ) {
     Box(
@@ -90,7 +90,7 @@ fun SearchScreen(
         SearchBottomNav(
             modifier = Modifier.align(Alignment.BottomCenter),
             onOpenFeed = onOpenFeed,
-            onOpenArticle = onOpenArticle,
+            onOpenArticle = { onOpenArticle(null) },
             onOpenProfile = onOpenProfile,
         )
     }

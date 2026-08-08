@@ -39,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +53,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.civicly.R
+import com.example.civicly.data.Bill
+import com.example.civicly.ui.bills.BillsViewModel
+import com.example.civicly.ui.bills.UiState
 import com.example.civicly.ui.theme.BiasCenter
 import com.example.civicly.ui.theme.BiasLeft
 import com.example.civicly.ui.theme.BiasRight
@@ -62,8 +67,8 @@ import com.example.civicly.ui.theme.OnSurfaceVariant
 import com.example.civicly.ui.theme.OutlineVariant
 import com.example.civicly.ui.theme.SlateNavy
 
-// ponytail: mock data only, no VM wiring. Every callback is {}.
-// Icons stand in for the design's photographic thumbnails — swap when an image loader is added.
+// Feed pulls real bills from Supabase via BillsViewModel for the news list.
+// Poll/Townhall cards below remain mock content — no matching table/UI wired yet.
 
 private val CHIPS = listOf("All News", "Town Halls", "Zoning & Transit", "Public Safety")
 
@@ -78,9 +83,11 @@ private val FILTER_MENU_ITEMS = listOf(
 @Composable
 fun FeedScreen(
     onOpenSearch: () -> Unit = {},
-    onOpenArticle: () -> Unit = {},
+    onOpenArticle: (String?) -> Unit = {},
     onOpenProfile: () -> Unit = {},
+    billsVm: BillsViewModel = viewModel(),
 ) {
+    val billsState by billsVm.state.collectAsState()
     Box(
         Modifier
             .fillMaxSize()
@@ -100,7 +107,13 @@ fun FeedScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     FilterMoreButton()
-                    NewsCard(onOpenArticle)
+                    when (val s = billsState) {
+                        is UiState.Data -> s.value.take(5).forEach { bill ->
+                            NewsCard(bill) { onOpenArticle(bill.id) }
+                        }
+                        is UiState.Error -> NewsCardMessage("Couldn't load bills", s.message)
+                        UiState.Loading -> NewsCardMessage("Loading bills…", "Pulling the latest measures from Supabase.")
+                    }
                     PollCard()
                     AudioTownhallCard()
                 }
@@ -109,7 +122,7 @@ fun FeedScreen(
         FloatingPillNav(
             modifier = Modifier.align(Alignment.BottomCenter),
             onOpenSearch = onOpenSearch,
-            onOpenArticle = onOpenArticle,
+            onOpenArticle = { onOpenArticle(null) },
             onOpenProfile = onOpenProfile,
         )
     }
@@ -279,7 +292,7 @@ private fun FilterMoreButton() {
 }
 
 @Composable
-private fun NewsCard(onOpenArticle: () -> Unit) {
+private fun NewsCard(bill: Bill, onOpenArticle: () -> Unit) {
     Surface(
         onClick = onOpenArticle,
         shape = RoundedCornerShape(24.dp),
@@ -300,14 +313,14 @@ private fun NewsCard(onOpenArticle: () -> Unit) {
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            "Dept. of Transportation",
+                            listOfNotNull(bill.city, bill.county).joinToString(", ").ifBlank { "Statewide" },
                             style = MaterialTheme.typography.bodySmall,
                             color = OnSurfaceVariant,
                         )
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Main St. Bridge Resurfacing to Cause Weekend Delays",
+                        bill.officialTitle ?: bill.id,
                         style = MaterialTheme.typography.titleMedium,
                         color = SlateNavy,
                         maxLines = 3,
@@ -315,7 +328,23 @@ private fun NewsCard(onOpenArticle: () -> Unit) {
                     )
                 }
             }
+            // Bias split isn't tracked per-bill yet — this stays a placeholder until that data exists.
             BiasStack(l = 40, c = 50, r = 10)
+        }
+    }
+}
+
+@Composable
+private fun NewsCardMessage(title: String, body: String) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White,
+        shadowElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = SlateNavy)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
         }
     }
 }
