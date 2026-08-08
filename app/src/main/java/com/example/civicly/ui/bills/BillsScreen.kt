@@ -83,18 +83,18 @@ private fun BillCard(bill: Bill) {
             .clickable { expanded = !expanded },
     ) {
         Column(Modifier.padding(12.dp)) {
-            Text(bill.title, style = MaterialTheme.typography.titleMedium)
+            Text(bill.officialTitle ?: "Untitled measure", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusBadge(bill.status)
+                StatusBadge(bill.dataStatus)
                 Spacer(Modifier.width(8.dp))
-                bill.lastActionDate?.let {
+                bill.electionDate?.let {
                     Text(it.take(10), style = MaterialTheme.typography.labelSmall)
                 }
             }
             AnimatedVisibility(expanded) {
                 Text(
-                    bill.summary ?: "No summary available.",
+                    bill.plainSummary ?: "No summary available.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
                 )
@@ -125,7 +125,9 @@ private fun statusColor(status: String?): Pair<String, Color> {
     return when {
         listOf("passed", "signed", "enacted", "chaptered").any { it in s } -> "Passed" to Color(0xFF2E7D32)
         listOf("vetoed", "failed", "dead").any { it in s } -> "Failed" to Color(0xFFC62828)
-        listOf("introduced", "referred", "pending", "committee").any { it in s } -> "In progress" to Color(0xFFF9A825)
+        listOf("introduced", "referred", "committee").any { it in s } -> "In progress" to Color(0xFFF9A825)
+        "verified" in s -> "Verified" to Color(0xFF2E7D32)
+        listOf("pending", "needs source").any { it in s } -> "Pending" to Color(0xFFF9A825)
         else -> (status ?: "Unknown") to Color(0xFF546E7A)
     }
 }

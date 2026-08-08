@@ -40,7 +40,7 @@ class NewsViewModel : ViewModel() {
                     val biasesDeferred = async { SupabaseClient.api.getBiasRatings() }
                     val articles = articlesDeferred.await()
                     val biases = biasesDeferred.await()
-                    val biasMap = biases.associateBy { it.sourceDomain }
+                    val biasMap = biases.associateBy { it.sourceName }
                     // #region agent log
                     DebugLog.log(
                         location = "NewsViewModel.kt:load",
@@ -53,7 +53,7 @@ class NewsViewModel : ViewModel() {
                     )
                     // #endregion
                     UiState.Data(
-                        articles.map { NewsItem(it, biasMap[it.sourceDomain]) }
+                        articles.map { NewsItem(it, biasMap[it.sourceName]) }
                     )
                 }
             } catch (e: Exception) {

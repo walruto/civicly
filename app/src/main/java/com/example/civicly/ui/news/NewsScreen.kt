@@ -63,9 +63,9 @@ fun NewsScreen(vm: NewsViewModel = viewModel()) {
                     ) {
                         items(s.value, key = { it.article.id }) { item ->
                             ArticleCard(item) {
-                                ctx.startActivity(
-                                    Intent(Intent.ACTION_VIEW, item.article.url.toUri())
-                                )
+                                item.article.url?.let {
+                                    ctx.startActivity(Intent(Intent.ACTION_VIEW, it.toUri()))
+                                }
                             }
                         }
                     }
@@ -86,9 +86,9 @@ private fun ArticleCard(item: NewsItem, onOpen: () -> Unit) {
             Text(item.article.title, style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(item.article.sourceDomain, style = MaterialTheme.typography.labelMedium)
+                Text(item.article.sourceName ?: "Unknown source", style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.width(8.dp))
-                BiasChip(item.bias?.lean)
+                BiasChip(item.bias?.biasRating)
             }
         }
     }
