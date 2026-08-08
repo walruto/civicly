@@ -86,16 +86,17 @@ private val SAVED_ARTICLES = listOf(
     SavedArticle("SF Housing Initiatives: New Affordable Units in Mission District", "1 week ago"),
 )
 
-private const val USER_NAME = "Marcus Thompson"
-private const val USER_LOCATION = "Alameda County Resident"
-
 @Composable
 fun ProfileScreen(
+    userName: String? = "Marcus Thompson",
+    userLocation: String? = "Alameda County Resident",
     onOpenFeed: () -> Unit = {},
     onOpenSearch: () -> Unit = {},
     onOpenArticle: (String?) -> Unit = {},
 ) {
     var showEdit by remember { mutableStateOf(false) }
+    val displayName = userName?.takeIf { it.isNotBlank() } ?: "Marcus Thompson"
+    val displayLocation = userLocation?.takeIf { it.isNotBlank() } ?: "Alameda County Resident"
     Box(
         Modifier
             .fillMaxSize()
@@ -106,7 +107,13 @@ fun ProfileScreen(
             contentPadding = PaddingValues(bottom = 120.dp),
         ) {
             item { ProfileTopBar() }
-            item { ProfileHeader(onEdit = { showEdit = true }) }
+            item {
+                ProfileHeader(
+                    name = displayName,
+                    location = displayLocation,
+                    onEdit = { showEdit = true },
+                )
+            }
             item {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     SavedArticlesCard()
@@ -120,7 +127,7 @@ fun ProfileScreen(
             onOpenArticle = { onOpenArticle(null) },
         )
     }
-    if (showEdit) EditProfileDialog(onDismiss = { showEdit = false })
+    if (showEdit) EditProfileDialog(initialName = displayName, onDismiss = { showEdit = false })
 }
 
 @Composable
@@ -163,7 +170,7 @@ private fun ProfileTopBar() {
 }
 
 @Composable
-private fun ProfileHeader(onEdit: () -> Unit) {
+private fun ProfileHeader(name: String, location: String, onEdit: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -187,7 +194,7 @@ private fun ProfileHeader(onEdit: () -> Unit) {
         }
         Spacer(Modifier.height(24.dp))
         Text(
-            USER_NAME,
+            name,
             style = MaterialTheme.typography.headlineMedium,
             color = SlateNavy,
         )
@@ -201,7 +208,7 @@ private fun ProfileHeader(onEdit: () -> Unit) {
             )
             Spacer(Modifier.width(4.dp))
             Text(
-                USER_LOCATION,
+                location,
                 style = MaterialTheme.typography.bodyMedium,
                 color = OnSurfaceVariant,
             )
@@ -352,8 +359,8 @@ private fun NavIcon(icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun EditProfileDialog(onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf(USER_NAME) }
+private fun EditProfileDialog(initialName: String, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(initialName) }
     var gender by remember { mutableStateOf(GENDER_OPTIONS.first()) }
     var county by remember { mutableStateOf(COUNTY_OPTIONS.first()) }
 

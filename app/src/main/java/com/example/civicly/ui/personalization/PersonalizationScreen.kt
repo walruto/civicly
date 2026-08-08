@@ -65,12 +65,14 @@ private val CANVAS_BG = Color(0xFFF8FAFC)
 
 @Composable
 fun PersonalizationScreen(
-    onContinue: () -> Unit = {},
+    initialName: String = "",
+    initialDistrict: String = "98104",
+    onContinue: (name: String, district: String) -> Unit = { _, _ -> },
     onSkip: () -> Unit = {},
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialName) }
     var gender by remember { mutableStateOf("Male") }
-    var district by remember { mutableStateOf("98104") }
+    var district by remember { mutableStateOf(initialDistrict) }
     var showDistrictSheet by remember { mutableStateOf(false) }
 
     Box(
@@ -135,7 +137,7 @@ fun PersonalizationScreen(
             }
             item {
                 Button(
-                    onClick = onContinue,
+                    onClick = { onContinue(name, district) },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DeepCobalt,
