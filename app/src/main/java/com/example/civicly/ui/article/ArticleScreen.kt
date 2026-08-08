@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
@@ -50,6 +51,7 @@ import com.example.civicly.data.SupabaseClient
 import com.example.civicly.data.toUserMessage
 import com.example.civicly.ui.bills.UiState
 import com.example.civicly.ui.theme.DeepCobalt
+import com.example.civicly.ui.theme.OchreAmber
 import com.example.civicly.ui.theme.OnSurfaceVariant
 import com.example.civicly.ui.theme.OutlineVariant
 import com.example.civicly.ui.theme.SlateNavy
@@ -67,6 +69,7 @@ data class ArticleContent(
     val summary: String?,
     val relatedMeasureId: String?,
     val url: String?,
+    val isPending: Boolean = false,
 )
 
 class ArticleViewModel(private val itemId: String? = null) : ViewModel() {
@@ -146,19 +149,20 @@ fun ArticleScreen(
 
 @Composable
 private fun ArticleHero(article: ArticleContent, onBack: () -> Unit) {
+    val gradient = if (article.isPending) {
+        listOf(Color(0xFF4A4636), Color(0xFF3A3728), Color(0xFF1E1C14))
+    } else {
+        listOf(Color(0xFF334155), SlateNavy, Color(0xFF091426))
+    }
     Box(
         Modifier
             .fillMaxWidth()
             .height(360.dp)
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF334155), SlateNavy, Color(0xFF091426)),
-                ),
-            ),
+            .background(Brush.verticalGradient(gradient)),
     ) {
         HeroButtons(onBack)
         Icon(
-            Icons.AutoMirrored.Filled.Article,
+            if (article.isPending) Icons.Filled.Schedule else Icons.AutoMirrored.Filled.Article,
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.16f),
             modifier = Modifier
@@ -171,9 +175,13 @@ private fun ArticleHero(article: ArticleContent, onBack: () -> Unit) {
                 .padding(16.dp, 0.dp, 16.dp, 32.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(shape = CircleShape, color = DeepCobalt, contentColor = Color.White) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (article.isPending) OchreAmber else DeepCobalt,
+                    contentColor = Color.White,
+                ) {
                     Text(
-                        article.category.uppercase(),
+                        if (article.isPending) "PENDING" else article.category.uppercase(),
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
@@ -299,9 +307,13 @@ private fun ArticleBody(article: ArticleContent) {
         shadowElevation = 4.dp,
     ) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Overview", style = MaterialTheme.typography.headlineSmall, color = SlateNavy)
-            article.summary.paragraphs().forEach {
-                Text(it, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
+            if (article.isPending) {
+                PendingNotice(article)
+            } else {
+                Text("Overview", style = MaterialTheme.typography.headlineSmall, color = SlateNavy)
+                article.summary.paragraphs().forEach {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
+                }
             }
             article.relatedMeasureId?.let {
                 Surface(
@@ -319,6 +331,36 @@ private fun ArticleBody(article: ArticleContent) {
             }
             article.url?.let { DetailRow("URL", it) }
             DetailRow("Supabase ID", article.id)
+        }
+    }
+}
+
+@Composable
+private fun PendingNotice(article: ArticleContent) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = OchreAmber.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, OchreAmber.copy(alpha = 0.4f)),
+    ) {
+        Row(
+            Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(Icons.Filled.Schedule, contentDescription = null, tint = OchreAmber)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    "Official text not published yet",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SlateNavy,
+                )
+                Text(
+                    "This measure has qualified for the ballot, but the official summary hasn't been " +
+                        "released yet." +
+                        (article.url?.let { " Check the source below for the latest updates." } ?: ""),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = OnSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -397,14 +439,21 @@ private fun NewsArticle.toArticleContent() = ArticleContent(
     url = url,
 )
 
-private fun Bill.toArticleContent() = ArticleContent(
-    id = id,
-    title = officialTitle ?: id,
-    sourceName = listOfNotNull(city, county).joinToString(", ").ifBlank { "Civicly" },
-    date = electionDate ?: lastVerified,
-    category = topicTags?.firstOrNull() ?: billType ?: "Civic Update",
-    summary = listOfNotNull(plainSummary, fiscalImpactSummary, yesVoteMeans, noVoteMeans)
-        .joinToString(" "),
-    relatedMeasureId = id,
-    url = sourceUrl,
-)
+private fun Bill.toArticleContent(): ArticleContent {
+    val pending = dataStatus?.contains("needs source", ignoreCase = true) == true ||
+        plainSummary?.startsWith("Pending", ignoreCase = true) == true
+    return ArticleContent(
+        id = id,
+        title = officialTitle ?: id,
+        sourceName = listOfNotNull(city, county).joinToString(", ").ifBlank { "Civicly" },
+        date = electionDate ?: lastVerified,
+        category = topicTags?.firstOrNull() ?: billType ?: "Civic Update",
+        // When pending, the individual fields are just repeats of "Pending" — skip
+        // joining them into a garbled sentence and let ArticleBody show one clean message instead.
+        summary = if (pending) null else listOfNotNull(plainSummary, fiscalImpactSummary, yesVoteMeans, noVoteMeans)
+            .joinToString(" "),
+        relatedMeasureId = id,
+        url = sourceUrl,
+        isPending = pending,
+    )
+}
