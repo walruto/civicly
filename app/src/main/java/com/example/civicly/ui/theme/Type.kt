@@ -6,16 +6,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Sizes/weights from DESIGN.md. Inter typeface skipped — needs ui-text-google-fonts.
-// Add Inter when brand-fidelity beats zero dependencies.
 private val Sans = FontFamily.Default
 
-private fun style(
-    weight: FontWeight,
-    size: Int,
-    line: Int,
-    tracking: Double = 0.0,
-) = TextStyle(
+private fun style(weight: FontWeight, size: Int, line: Int, tracking: Double = 0.0) = TextStyle(
     fontFamily = Sans,
     fontWeight = weight,
     fontSize = size.sp,
@@ -33,6 +26,7 @@ val Typography = Typography(
     bodyLarge = style(FontWeight.Normal, 18, 28),
     bodyMedium = style(FontWeight.Normal, 16, 24),
     bodySmall = style(FontWeight.Normal, 14, 20),
+    labelLarge = style(FontWeight.SemiBold, 14, 18),
     labelMedium = style(FontWeight.SemiBold, 12, 16, 0.6),
     labelSmall = style(FontWeight.Medium, 11, 14),
 )

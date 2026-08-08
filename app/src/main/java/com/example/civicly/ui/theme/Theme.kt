@@ -22,23 +22,19 @@ private val CiviclyColors = lightColorScheme(
     onSurface = OnSurface,
     surfaceVariant = SurfaceContainer,
     onSurfaceVariant = OnSurfaceVariant,
-    surfaceContainerLow = SurfaceContainerLow,
-    surfaceContainer = SurfaceContainer,
     outline = Outline,
     outlineVariant = OutlineVariant,
     error = ErrorRed,
 )
 
-// DESIGN.md: 4px on controls, 8px on cards/hero.
 private val CiviclyShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(4.dp),
-    medium = RoundedCornerShape(8.dp),
-    large = RoundedCornerShape(12.dp),
-    extraLarge = RoundedCornerShape(16.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
-// ponytail: static light scheme only. Add dark/dynamic when product asks.
 @Composable
 fun CiviclyTheme(content: @Composable () -> Unit) {
     MaterialTheme(
